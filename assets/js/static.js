@@ -2,10 +2,38 @@
   'use strict';
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
-  $$('.static-menu-btn').forEach(button => button.addEventListener('click', () => {
-    const nav=button.closest('.main-menu');const open=nav.classList.toggle('static-menu-open');
-    button.setAttribute('aria-expanded', String(open));
-  }));
+
+  // The mobile navigation expands in normal document flow and stays clickable.
+  $$('.static-menu-btn').forEach(button => {
+    const nav = button.closest('.main-menu');
+    const links = nav?.querySelector('.site-nav__list');
+    if (!nav || !links) return;
+    if (!links.id) links.id = 'site-mobile-nav';
+    button.setAttribute('aria-controls', links.id);
+    const close = () => {
+      nav.classList.remove('static-menu-open');
+      button.setAttribute('aria-expanded', 'false');
+      button.textContent = '☰ Меню';
+    };
+    button.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('static-menu-open');
+      button.setAttribute('aria-expanded', String(isOpen));
+      button.textContent = isOpen ? '× Закрыть' : '☰ Меню';
+    });
+    links.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+    document.addEventListener('pointerdown', event => {
+      if (!nav.contains(event.target)) close();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && nav.classList.contains('static-menu-open')) {
+        close();
+        button.focus();
+      }
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 850 && nav.classList.contains('static-menu-open')) close();
+    });
+  });
   $$('.static-tip-next').forEach(button => button.addEventListener('click', () => {
     const body=button.closest('.sovet-item')?.querySelector('.sovet-item__body');
     if(!body || !Array.isArray(window.INCTA_TIPS) || !window.INCTA_TIPS.length)return;
@@ -67,4 +95,65 @@
       e.preventDefault();$('.static-lightbox img').src=img.currentSrc||img.src;lightbox.classList.add('is-open');
     });
   });
+
+  // Single source of truth for service cards on every static page.
+  const usefulServices = [
+    {name:'@InstaAnonymBot', description:'Анонимный просмотр сторис и других медиа в Инстаграм, ТикТок и VK.', url:'https://spyig.com/r?start=569CE832', image:'https://t.me/i/userpic/320/spyig.jpg'},
+    {name:'Instashpion', description:'Смотреть анонимно информацию о профиле и активности в Инстаграм.', url:'https://instashpion.ru?p=921de55fab9b959bd25b87375cf9e0f9', image:'local:services/item-3.png'},
+    {name:'ВК Шпион', description:'Отслеживание времени онлайн и активности пользователей ВКонтакте.', url:'https://kogdavseti.ru/?p=9fc31733b273680a0531eee5c8a1e502', image:'https://www.google.com/s2/favicons?domain=kogdavseti.ru&sz=128'},
+    {name:'InstaParser', description:'Сбор и анализ аудитории Инстаграм по аккаунтам, хештегам и геолокации.', url:'https://insta-parser.ru?p=c9437b5a39a886169827e5f43de34eeb', image:'https://www.google.com/s2/favicons?domain=insta-parser.ru&sz=128'},
+    {name:'Getwinner', description:'Сервис для проведения розыгрышей и выбора победителей.', url:'https://getwinner.ru?p=523e10f83226bd9651c0d603277d19d0', image:'https://www.google.com/s2/favicons?domain=getwinner.ru&sz=128'},
+    {name:'Spamguardapp', description:'Умный сервис очистки и мониторинга спам-активности.', url:'https://ru.spamguardapp.com?p=bf454866c06f29b8c41a21107e1f5801', image:'local:services/item-5.png'},
+    {name:'livedune', description:'Аналитика аккаунтов и статистики в социальных сетях.', url:'https://livedune.ru/?from=8e852a8500', image:'local:services/item-7.png'},
+    {name:'@Smm_bloger_bot', description:'Телеграм-бот с инструментами продвижения в социальных сетях.', url:'https://t.me/Smm_bloger_bot?start=site-inctanew', image:'https://t.me/i/userpic/320/Smm_bloger_bot.jpg'}
+  ];
+  const assetRoot = (document.querySelector('link[href*="assets/css/static.css"]')?.getAttribute('href') || './assets/css/static.css').split('assets/css/static.css')[0];
+  $$('.list-services, .list-services-aside').forEach(list => {
+    const fragment = document.createDocumentFragment();
+    usefulServices.forEach(service => {
+      const item = document.createElement('div');
+      item.className = 'item-service list-services__item';
+      const iconWrapper = document.createElement('div');
+      iconWrapper.className = 'item-service__img';
+      const icon = document.createElement('img');
+      icon.src = service.image.startsWith('local:') ? assetRoot + 'assets/theme/img/' + service.image.slice(6) : service.image;
+      icon.alt = service.name;
+      icon.loading = 'lazy';
+      icon.width = 61;
+      icon.height = 61;
+      icon.addEventListener('error', () => {
+        if (icon.dataset.fallback) return;
+        icon.dataset.fallback = '1';
+        icon.src = assetRoot + 'assets/theme/img/icon-services.png';
+      });
+      iconWrapper.appendChild(icon);
+      const contents = document.createElement('div');
+      contents.className = 'item-service__content';
+      const title = document.createElement('a');
+      title.className = 'item-service__title';
+      title.href = service.url;
+      title.target = '_blank';
+      title.rel = 'noopener noreferrer sponsored';
+      title.textContent = service.name;
+      const description = document.createElement('div');
+      description.className = 'item-service__text';
+      description.textContent = service.description;
+      contents.append(title, description);
+      item.append(iconWrapper, contents);
+      fragment.appendChild(item);
+    });
+    list.replaceChildren(fragment);
+  });
+  const homeServices = $('.page-site--index .section-item--aside');
+  const homeFaq = $('.page-site--index .section-item--faq');
+  if (homeServices && homeFaq && homeServices.parentNode === homeFaq.parentNode) {
+    homeFaq.parentNode.insertBefore(homeServices, homeFaq);
+  }
+  $$('aside.item-section--aside').forEach(aside => {
+    const blocks = $$('.section-aside', aside);
+    const faq = blocks.find(block => $('.title-middle', block)?.textContent.trim() === 'Частые вопросы');
+    const services = blocks.find(block => $('.title-middle', block)?.textContent.trim() === 'Полезные сервисы');
+    if (faq && services) aside.insertBefore(services, faq);
+  });
+
 })();
