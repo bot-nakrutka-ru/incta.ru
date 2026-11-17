@@ -153,7 +153,10 @@
     const blocks = $$('.section-aside', aside);
     const faq = blocks.find(block => $('.title-middle', block)?.textContent.trim() === 'Частые вопросы');
     const services = blocks.find(block => $('.title-middle', block)?.textContent.trim() === 'Полезные сервисы');
-    if (faq && services) aside.insertBefore(services, faq);
+    // Keep services above both the FAQ and the useful tip on every page.
+    if (services && blocks.length && blocks[0] !== services) {
+      aside.insertBefore(services, blocks[0]);
+    }
   });
 
 })();
