@@ -53,3 +53,23 @@ html{scroll-behavior:smooth}body{overflow-x:hidden}.page-site{overflow:hidden}.p
 .item-service__img{flex:0 0 61px}
 .item-service__img img{display:block;width:61px;height:61px;object-fit:contain;border-radius:12px}
 .list-services-aside .item-service{width:100%}
+
+/* Services first, advice second: consistent vertical layout across screen sizes. */
+.page-site--index .services-flex{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:20px;
+}
+.page-site--index .services-flex__content{
+  order:0;
+  width:100%;
+  max-width:none;
+}
+.page-site--index .services-flex__sidebar{
+  order:1;
+  box-sizing:border-box;
+  width:100%;
+  max-width:640px;
+  margin:8px auto 20px;
+}
